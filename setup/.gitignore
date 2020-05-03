@@ -1,2 +1,3 @@
 kubectl.conf
 terraform.tfstate*
+.terraform*
