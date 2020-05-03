@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goms-deployment
+  namespace: actions-runner-system
+  labels:
+    app: goms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goms
+  template:
+    metadata:
+      labels:
+        app: goms
+    spec:
+      containers:
+      - name: goms
+        image: mlit/goms:latest
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: goms
+  namespace: actions-runner-system
+spec:
+  type: NodePort
+  selector:
+    app: goms
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
