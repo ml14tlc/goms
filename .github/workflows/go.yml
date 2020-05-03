@@ -1,0 +1,64 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  CGO_ENABLED: 0
+  GOOS: "linux"
+
+jobs:
+
+  build:
+    name: goms
+    runs-on: self-hosted
+    #runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+#    - name: Get dependencies
+#      run: |
+#        go get -v -t -d ./...
+#        if [ -f Gopkg.toml ]; then
+#            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+#            dep ensure
+#        fi
+
+    - name: Test
+      run: go test -v .
+
+    - name: Docker build and push
+      uses: HurricanKai/Publish-Docker-Github-Action@master
+      with:
+        name: mlit/goms
+        username: mlit
+        password: ${{ secrets.dockerhub_token}}
+
+    - name: Deploy
+      uses: Consensys/kubernetes-action@master
+      env:
+        KUBE_CONFIG_DATA: ${{ secrets.kubectl_conf }}
+      with:
+        args: apply -f goms.dpl.yml
+
+    - name: Check rollout
+      uses: Consensys/kubernetes-action@master
+      env:
+        KUBE_CONFIG_DATA: ${{ secrets.kubectl_conf }}
+      with:
+        args: rollout status deployment/goms-deployment -n actions-runner-system
+      
+    - name: Integration test
+      uses: jtalk/url-health-check-action@v1.2
+      with:
+        url: http://goms.actions-runner-system.svc:8080
