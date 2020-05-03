@@ -64,10 +64,11 @@ The unit tests are in `main_test.go`.
 
 The workflow setup is in the file `go.yml`. The available actions from the [marketplace](https://github.com/marketplace?type=actions) have been used as much as possible.
 
+Few notes about some steps:
 
-## kubectl setup
+* *Docker build and push*: instead of building the application on the runner and pass it as artifact, I preferred to use a multi-stage Docker file. Unfortunately the unit tests (see the step *Unit tests*) 
+requires *Set up Go 1.13*, which is rather costly in terms of download, so at this point it boils down to personal preference;
+* *Deploy*: the deployment of the application on the cluster relies on a marketplace action. The drawback is that the configuration file for `kubectl` is required, passed as a secret. It has been generated according to [these](https://dev.to/richicoder1/how-we-connect-to-kubernetes-pods-from-github-actions-1mg) instructions. The solution is not ideal, I tried to use a [service container](https://help.github.com/en/actions/configuring-and-managing-workflows/about-service-containers) to run `kubectl proxy`. It would have taken care of the authentication, so no need to pass keep track of the static credentials. Unfortunately it didn't work out of the box, so I opted for an easier solution;
+* *Integration test*: this is rather simple, it only calls the URL of the app's service via CURL. Only the method GET is supported. Tests in a real case should be more complicated, probably a script would be better than this simple action.
 
-setup kube config with sa token: [here](https://dev.to/richicoder1/how-we-connect-to-kubernetes-pods-from-github-actions-1mg)
-
-* the secret is `/var/run/secrets/kubernetes.io/serviceaccount/token`
-* the CA cert is `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`
+**Time spent: 3 hours**
